@@ -1,4 +1,7 @@
+// Store loaded reviews
 let reviews = [];
+
+// DOM elements
 const statusEl = document.getElementById('status');
 const reviewDisplay = document.getElementById('reviewDisplay');
 const analyzeBtn = document.getElementById('analyzeBtn');
@@ -8,16 +11,23 @@ const labelEl = document.getElementById('label');
 const scoreEl = document.getElementById('score');
 const errorMsgEl = document.getElementById('errorMsg');
 
+// Update status text
 function setStatus(text) {
   statusEl.textContent = text;
 }
 
+// Show or hide error messages
 function setError(text) {
-  if (!text) { errorMsgEl.style.display = 'none'; errorMsgEl.textContent = ''; return; }
+  if (!text) { 
+    errorMsgEl.style.display = 'none'; 
+    errorMsgEl.textContent = ''; 
+    return; 
+  }
   errorMsgEl.style.display = 'block';
   errorMsgEl.textContent = text;
 }
 
+// Reset result display to default state
 function resetResultDisplay() {
   iconEl.className = 'iconCircle';
   iconEl.innerHTML = '<i class="fa-solid fa-question"></i>';
@@ -26,10 +36,12 @@ function resetResultDisplay() {
   setError('');
 }
 
+// Show chosen review
 function displayReview(text) {
   reviewDisplay.textContent = text || '—';
 }
 
+// Update display with sentiment result
 function setResult(kind, conf) {
   const confStr = typeof conf === 'number' ? (conf*100).toFixed(1) + '%' : '—';
   scoreEl.textContent = `Confidence: ${confStr}`;
@@ -48,12 +60,14 @@ function setResult(kind, conf) {
   }
 }
 
+// Pick a random review from loaded list
 function chooseRandomReview() {
   if (!reviews || reviews.length === 0) return null;
   const idx = Math.floor(Math.random() * reviews.length);
   return reviews[idx];
 }
 
+// Call Hugging Face inference API
 async function analyzeReviewText(text) {
   const token = hfTokenInput.value.trim();
   const url = 'https://api-inference.huggingface.co/models/siebert/sentiment-roberta-large-english';
@@ -66,8 +80,12 @@ async function analyzeReviewText(text) {
       body: JSON.stringify({ inputs: text })
     });
     if (!resp.ok) {
+      // Try to extract API error message
       let errText = `API error: ${resp.status} ${resp.statusText}`;
-      try { const body = await resp.json(); if (body && body.error) errText += ` — ${body.error}`; } catch(e){}
+      try { 
+        const body = await resp.json(); 
+        if (body && body.error) errText += ` — ${body.error}`; 
+      } catch(e){}
       throw new Error(errText);
     }
     const data = await resp.json();
@@ -77,9 +95,12 @@ async function analyzeReviewText(text) {
   }
 }
 
+// Interpret Hugging Face API response into { kind, score }
 function interpretApiResponse(data) {
   if (!data) return { kind: 'neutral', score: null };
   let candidate = null;
+
+  // Different formats possible from HF models
   if (Array.isArray(data) && data.length > 0) {
     if (Array.isArray(data[0]) && data[0].length>0 && data[0][0].label) {
       candidate = data[0][0];
@@ -90,14 +111,17 @@ function interpretApiResponse(data) {
       if (Array.isArray(inner) && inner[0] && inner[0].label) candidate = inner[0];
     }
   }
+
   if (!candidate) return { kind: 'neutral', score: null };
   const label = String(candidate.label || '').toUpperCase();
   const score = typeof candidate.score === 'number' ? candidate.score : parseFloat(candidate.score) || 0;
+
   if (label === 'POSITIVE' && score > 0.5) return { kind: 'positive', score };
   if (label === 'NEGATIVE' && score > 0.5) return { kind: 'negative', score };
   return { kind: 'neutral', score };
 }
 
+// Handle analyze button click
 async function onAnalyzeClick() {
   resetResultDisplay();
   setError('');
@@ -107,8 +131,11 @@ async function onAnalyzeClick() {
   }
   analyzeBtn.disabled = true;
   setStatus('Selecting random review…');
+
+  // Choose and display review
   const chosen = chooseRandomReview();
   displayReview(chosen || '—');
+
   setStatus('Analyzing review via Hugging Face Inference API…');
   try {
     const apiData = await analyzeReviewText(chosen || '');
@@ -125,15 +152,19 @@ async function onAnalyzeClick() {
 
 analyzeBtn.addEventListener('click', onAnalyzeClick);
 
+// Load TSV file and parse reviews using Papa Parse
 async function loadTSV() {
   try {
     setStatus('Fetching reviews_test.tsv …');
     const resp = await fetch('reviews_test.tsv');
     if (!resp.ok) throw new Error(`Failed to fetch reviews_test.tsv (${resp.status})`);
     const text = await resp.text();
+
     setStatus('Parsing TSV with Papa Parse …');
     const parsed = Papa.parse(text, { header: true, delimiter: '\t', skipEmptyLines: true });
     const data = parsed && parsed.data ? parsed.data : [];
+
+    // Extract text column (fallback to first column if missing)
     const extracted = data.map(row => {
       if (row && typeof row === 'object') {
         if ('text' in row) return String(row['text']).trim();
@@ -142,7 +173,9 @@ async function loadTSV() {
       }
       return '';
     }).filter(Boolean);
+
     reviews = extracted;
+
     if (reviews.length === 0) {
       setStatus('No reviews found in TSV.');
       displayReview('No reviews found in reviews_test.tsv (ensure a "text" column exists).');
@@ -157,4 +190,5 @@ async function loadTSV() {
   }
 }
 
+// Initialize by loading TSV
 loadTSV();
