@@ -82,9 +82,9 @@ async function countNouns() {
     const resultDiv = document.getElementById('result');
     if (!resultDiv.dataset.text) return;
 
-    const data = await callApi('', resultDiv.dataset.text, 'https://api-inference.huggingface.co/models/flair/chunk-english');
+    const data = await callApi('', resultDiv.dataset.text, 'https://api-inference.huggingface.co/models/vblagoje/bert-english-uncased-finetuned-pos');
     if (data) {
-        const nounCount = data.filter(entity => entity.entity_group === 'NP').length;
+        const nounCount = data.filter(entity => entity.entity_group === 'NOUN').length;
         const nounLevel = nounCount > 15 ? 'high' : nounCount >= 6 ? 'medium' : 'low';
         const icon = nounLevel === 'high' ? '🟢' : nounLevel === 'medium' ? '🟡' : '🔴';
         resultDiv.innerHTML = `<p><strong>Review:</strong> ${resultDiv.dataset.text}</p><p><strong>Noun Count:</strong> ${icon} (${nounLevel})</p>`;
