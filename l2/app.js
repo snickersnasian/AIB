@@ -38,7 +38,7 @@ async function callApi(prompt, text, modelUrl) {
         }
 
         const data = await response.json();
-        return data[0][0].label.toLowerCase();
+        return modelUrl.includes('siebert') ? data[0][0].label.toLowerCase() : data;
     } catch (error) {
         errorDiv.textContent = error.message;
         errorDiv.style.display = 'block';
@@ -82,8 +82,10 @@ async function countNouns() {
     const resultDiv = document.getElementById('result');
     if (!resultDiv.dataset.text) return;
 
-    const nounLevel = await callApi('Count the nouns in this review and return only High (>15), Medium (6-15), or Low (<6): ', resultDiv.dataset.text, 'https://api-inference.huggingface.co/models/bert-base-uncased');
-    if (nounLevel) {
+    const data = await callApi('', resultDiv.dataset.text, 'https://api-inference.huggingface.co/models/flair/chunk-english');
+    if (data) {
+        const nounCount = data.filter(entity => entity.entity_group === 'NP').length;
+        const nounLevel = nounCount > 15 ? 'high' : nounCount >= 6 ? 'medium' : 'low';
         const icon = nounLevel === 'high' ? '🟢' : nounLevel === 'medium' ? '🟡' : '🔴';
         resultDiv.innerHTML = `<p><strong>Review:</strong> ${resultDiv.dataset.text}</p><p><strong>Noun Count:</strong> ${icon} (${nounLevel})</p>`;
         resultDiv.style.display = 'block';
