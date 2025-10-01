@@ -12,7 +12,7 @@ async function loadReviews() {
     });
 }
 
-async function callApi(prompt, text) {
+async function callApi(prompt, text, modelUrl) {
     const token = document.getElementById('token').value;
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -23,7 +23,7 @@ async function callApi(prompt, text) {
     errorDiv.style.display = 'none';
 
     try {
-        const response = await fetch('https://api-inference.huggingface.co/models/siebert/sentiment-roberta-large-english', {
+        const response = await fetch(modelUrl, {
             method: 'POST',
             headers,
             body: JSON.stringify({ inputs: `${prompt}${text}` })
@@ -70,7 +70,7 @@ async function analyzeSentiment() {
     const resultDiv = document.getElementById('result');
     if (!resultDiv.dataset.text) return;
 
-    const sentiment = await callApi('Classify this review as positive, negative, or neutral: ', resultDiv.dataset.text);
+    const sentiment = await callApi('Classify this review as positive, negative, or neutral: ', resultDiv.dataset.text, 'https://api-inference.huggingface.co/models/siebert/sentiment-roberta-large-english');
     if (sentiment) {
         const icon = sentiment === 'positive' ? '👍' : sentiment === 'negative' ? '👎' : '❓';
         resultDiv.innerHTML = `<p><strong>Review:</strong> ${resultDiv.dataset.text}</p><p><strong>Sentiment:</strong> ${icon}</p>`;
@@ -82,7 +82,7 @@ async function countNouns() {
     const resultDiv = document.getElementById('result');
     if (!resultDiv.dataset.text) return;
 
-    const nounLevel = await callApi('Count the nouns in this review and return only High (>15), Medium (6-15), or Low (<6): ', resultDiv.dataset.text);
+    const nounLevel = await callApi('Count the nouns in this review and return only High (>15), Medium (6-15), or Low (<6): ', resultDiv.dataset.text, 'https://api-inference.huggingface.co/models/bert-base-uncased');
     if (nounLevel) {
         const icon = nounLevel === 'high' ? '🟢' : nounLevel === 'medium' ? '🟡' : '🔴';
         resultDiv.innerHTML = `<p><strong>Review:</strong> ${resultDiv.dataset.text}</p><p><strong>Noun Count:</strong> ${icon} (${nounLevel})</p>`;
