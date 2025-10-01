@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event Logger</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; }
+    .wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 12px; }
+    input, button { font-size: 16px; padding: 10px; }
+    .row { display: grid; gap: 8px; grid-template-columns: 1fr auto; }
+    .btns { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #status { min-height: 1.5em; font-size: 14px; color: #222; }
+    .muted { color: #666; font-size: 13px; }
+    @media (max-width: 520px) { .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="margin:0;">Event Logger</h1>
+    <div class="row">
+      <input id="gasUrl" type="url" placeholder="Paste Google Apps Script Web App URL (…/exec)" autocomplete="off" spellcheck="false">
+      <button id="saveUrl" type="button">Save URL</button>
+    </div>
+
+    <div class="btns">
+      <button id="ctaA" type="button">CTA A</button>
+      <button id="ctaB" type="button">CTA B</button>
+      <button id="heartbeat" type="button">Heartbeat</button>
+    </div>
+
+    <div id="status" aria-live="polite"></div>
+    <div class="muted">Stores URL and anonymous user id locally. Sends x-www-form-urlencoded without custom headers.</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
